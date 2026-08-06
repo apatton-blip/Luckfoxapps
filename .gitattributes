@@ -1,0 +1,5 @@
+# Force LF on shell scripts so Windows/WSL checkouts don't break the shebang
+*.sh text eol=lf
+
+# Sensible defaults: normalize text, let git detect; keep LF in repo
+* text=auto eol=lf

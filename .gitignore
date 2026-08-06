@@ -1,0 +1,3 @@
+build/
+applications/*
+!applications/luckfox_pico_rtsp_yolov5/
