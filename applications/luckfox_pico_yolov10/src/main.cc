@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 										cv::FONT_HERSHEY_SIMPLEX,1,
 										cv::Scalar(0,255,0),2);
 			}
-
+		}
         RK_MPI_SYS_MmzFlushCache(src_Blk, RK_FALSE);			
 		
 		// encode H264
