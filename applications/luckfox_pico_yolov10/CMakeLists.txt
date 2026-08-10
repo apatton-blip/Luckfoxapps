@@ -17,7 +17,7 @@ set(CMAKE_CXX_COMPILER "${SDK_PATH}/tools/linux/toolchain/arm-rockchip830-linux-
 
 # Define PROJECT_NAME
 
-project(luckfox_pico_rtsp_yolov5)
+project(luckfox_pico_yolov10)
 
 # Export Intellisense
 
@@ -30,6 +30,7 @@ set(CMAKE_INSTALL_RPATH "/oem/usr/lib:$ORIGIN")
 set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 
 add_definitions(-DRV1106_1103)
+# add_definitions(-DISABLE_LIBJPEG)
 
 # Create .exe from SRCs
 
@@ -37,6 +38,8 @@ file(GLOB SRC_FILES
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc"
     "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/file_utils.c"
+    "${CMAKE_CURRENT_SOURCE_DIR}/utils/image_utils.c"
 )
 
 # Library search paths
@@ -53,14 +56,16 @@ add_executable(${PROJECT_NAME} ${SRC_FILES})
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/include/rknn
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/librga
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/include/jpeg_turbo/include
+    ${CMAKE_CURRENT_SOURCE_DIR}/utils
     
     ${SDK_OUT_PATH}
     ${SDK_OUT_PATH}/utils
     ${SDK_OUT_PATH}/common 
     ${SDK_OUT_PATH}/common/isp3.x   
     ${SDK_OUT_PATH}/include
-    ${SDK_OUT_PATH}/include/rknn
-    ${SDK_OUT_PATH}/include/librga 
     ${SDK_OUT_PATH}/include/rkaiq
     ${SDK_OUT_PATH}/include/rkaiq/uAPI2
     ${SDK_OUT_PATH}/include/rkaiq/common

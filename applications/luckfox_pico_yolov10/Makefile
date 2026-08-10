@@ -1,2 +1,2 @@
-APP := luckfox_pico_rtsp_yolov5
+APP := luckfox_pico_yolov10
 include /home/development/makescripts.mk

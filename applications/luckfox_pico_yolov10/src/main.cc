@@ -15,7 +15,7 @@
 
 #include "rtsp_demo.h"
 #include "luckfox_mpi.h"
-#include "yolov5.h"
+#include "yolov10.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -76,9 +76,9 @@ int main(int argc, char *argv[]) {
 	rknn_app_context_t rknn_app_ctx;	
 	object_detect_result_list od_results;
     int ret;
-	const char *model_path = "./model/yolov5.rknn";
+	const char *model_path = "./model/yolov10.rknn";
     memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));	
-	init_yolov5_model(model_path, &rknn_app_ctx);
+	init_yolov10_model(model_path, &rknn_app_ctx);
 	printf("init rknn model success!\n");
 	init_post_process();
 
@@ -159,13 +159,27 @@ int main(int argc, char *argv[]) {
 			cv::Mat yuv420sp(height + height / 2, width, CV_8UC1, vi_data);
 			cv::Mat bgr(height, width, CV_8UC3, data);			
 			
-			cv::cvtColor(yuv420sp, bgr, cv::COLOR_YUV420sp2BGR);
+			cv::cvtColor(yuv420sp, bgr, cv::COLOR_YUV420sp2RGB);
 			cv::resize(bgr, frame, cv::Size(width ,height), 0, 0, cv::INTER_LINEAR);
 			
 			//letterbox
-			cv::Mat letterboxImage = letterbox(frame);	
-			memcpy(rknn_app_ctx.input_mems[0]->virt_addr, letterboxImage.data, model_width*model_height*3);		
-			inference_yolov5_model(&rknn_app_ctx, &od_results);
+            cv::Mat letterboxImage = letterbox(frame);  
+            
+            // 1. Wrap the OpenCV Mat in Rockchip's image_buffer_t struct
+            image_buffer_t img;
+            memset(&img, 0, sizeof(image_buffer_t));
+            img.width = model_width;           // 640
+            img.height = model_height;         // 640
+            img.width_stride = model_width;
+            img.height_stride = model_height;
+            img.format = IMAGE_FORMAT_RGB888;  // OpenCV uses BGR natively
+            img.virt_addr = letterboxImage.data;
+
+            // 2. Keep your memory copy (the YOLOv10 wrapper will gracefully pass this through)
+            memcpy(rknn_app_ctx.input_mems[0]->virt_addr, letterboxImage.data, model_width*model_height*3);     
+            
+            // 3. Call inference with the new middle argument
+            inference_yolov10_model(&rknn_app_ctx, &img, &od_results);
 
 			for(int i = 0; i < od_results.count; i++)
 			{					
@@ -247,7 +261,7 @@ int main(int argc, char *argv[]) {
 	RK_MPI_SYS_Exit();
 
 	// Release rknn model
-    release_yolov5_model(&rknn_app_ctx);		
+    release_yolov10_model(&rknn_app_ctx);		
 	deinit_post_process();
 	
 	return 0;

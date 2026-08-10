@@ -1,4 +1,4 @@
-// Copyright (c) 2023 by Rockchip Electronics Co., Ltd. All Rights Reserved.
+// Copyright (c) 2024 by Rockchip Electronics Co., Ltd. All Rights Reserved.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,7 +17,10 @@
 #include <string.h>
 #include <math.h>
 
-#include "yolov5.h"
+#include "yolov10.h"
+#include "common.h"
+#include "file_utils.h"
+#include "image_utils.h"
 
 static void dump_tensor_attr(rknn_tensor_attr *attr)
 {
@@ -28,11 +31,9 @@ static void dump_tensor_attr(rknn_tensor_attr *attr)
            get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
 }
 
-int init_yolov5_model(const char *model_path, rknn_app_context_t *app_ctx)
+int init_yolov10_model(const char *model_path, rknn_app_context_t *app_ctx)
 {
     int ret;
-    int model_len = 0;
-    char *model;
     rknn_context ctx = 0;
 
     ret = rknn_init(&ctx, (char *)model_path, 0, 0, NULL);
@@ -50,10 +51,10 @@ int init_yolov5_model(const char *model_path, rknn_app_context_t *app_ctx)
         printf("rknn_query fail! ret=%d\n", ret);
         return -1;
     }
-    //printf("model input num: %d, output num: %d\n", io_num.n_input, io_num.n_output);
+    printf("model input num: %d, output num: %d\n", io_num.n_input, io_num.n_output);
 
     // Get Model Input Info
-    //printf("input tensors:\n");
+    printf("input tensors:\n");
     rknn_tensor_attr input_attrs[io_num.n_input];
     memset(input_attrs, 0, sizeof(input_attrs));
     for (int i = 0; i < io_num.n_input; i++)
@@ -69,7 +70,7 @@ int init_yolov5_model(const char *model_path, rknn_app_context_t *app_ctx)
     }
 
     // Get Model Output Info
-    //printf("output tensors:\n");
+    printf("output tensors:\n");
     rknn_tensor_attr output_attrs[io_num.n_output];
     memset(output_attrs, 0, sizeof(output_attrs));
     for (int i = 0; i < io_num.n_output; i++)
@@ -90,7 +91,7 @@ int init_yolov5_model(const char *model_path, rknn_app_context_t *app_ctx)
     input_attrs[0].type = RKNN_TENSOR_UINT8;
     // default fmt is NHWC,1106 npu only support NHWC in zero copy mode
     input_attrs[0].fmt = RKNN_TENSOR_NHWC;
-    //printf("input_attrs[0].size_with_stride=%d\n", input_attrs[0].size_with_stride);
+    printf("input_attrs[0].size_with_stride=%d\n", input_attrs[0].size_with_stride);
     app_ctx->input_mems[0] = rknn_create_mem(ctx, input_attrs[0].size_with_stride);
 
     // Set input tensor memory
@@ -149,8 +150,8 @@ int init_yolov5_model(const char *model_path, rknn_app_context_t *app_ctx)
     return 0;
 }
 
-int release_yolov5_model(rknn_app_context_t *app_ctx)
-{
+int release_yolov10_model(rknn_app_context_t *app_ctx)
+{    
     if (app_ctx->input_attrs != NULL)
     {
         free(app_ctx->input_attrs);
@@ -174,20 +175,50 @@ int release_yolov5_model(rknn_app_context_t *app_ctx)
     if (app_ctx->rknn_ctx != 0)
     {
         rknn_destroy(app_ctx->rknn_ctx);
-
         app_ctx->rknn_ctx = 0;
     }
-
-    printf("Release success\n");
     return 0;
 }
 
-int inference_yolov5_model(rknn_app_context_t *app_ctx,  object_detect_result_list *od_results)
+int inference_yolov10_model(rknn_app_context_t *app_ctx, image_buffer_t *img, object_detect_result_list *od_results)
 {
     int ret;
+    image_buffer_t dst_img;
+    letterbox_t letter_box;
     const float nms_threshold = NMS_THRESH;      // 默认的NMS阈值
     const float box_conf_threshold = BOX_THRESH; // 默认的置信度阈值
-   
+    int bg_color = 114;
+    
+    if ((!app_ctx) || !(img) || (!od_results))
+    {
+        return -1;
+    }
+    memset(od_results, 0x00, sizeof(*od_results));
+    memset(&letter_box, 0, sizeof(letterbox_t));
+    memset(&dst_img, 0, sizeof(image_buffer_t));
+
+    // Pre Process
+    dst_img.width = app_ctx->model_width;
+    dst_img.height = app_ctx->model_height;
+    dst_img.format = IMAGE_FORMAT_RGB888;
+    dst_img.size = get_image_size(&dst_img);
+    dst_img.fd = app_ctx->input_mems[0]->fd;
+    if (dst_img.virt_addr == NULL && dst_img.fd == 0)
+    {
+        printf("malloc buffer size:%d fail!\n", dst_img.size);
+        return -1;
+    }
+
+    // letterbox
+    ret = convert_image_with_letterbox(img, &dst_img, &letter_box, bg_color);
+    if (ret < 0)
+    {
+        printf("convert_image_with_letterbox fail! ret=%d\n", ret);
+        return -1;
+    }
+
+    // Run
+    printf("rknn_run\n");
     ret = rknn_run(app_ctx->rknn_ctx, nullptr);
     if (ret < 0) {
         printf("rknn_run fail! ret=%d\n", ret);
@@ -195,7 +226,7 @@ int inference_yolov5_model(rknn_app_context_t *app_ctx,  object_detect_result_li
     }
 
     // Post Process
-    post_process(app_ctx, app_ctx->output_mems,  box_conf_threshold, nms_threshold, od_results);
+    post_process(app_ctx, app_ctx->output_mems, &letter_box, box_conf_threshold, nms_threshold, od_results);
 out:
     return ret;
 }
