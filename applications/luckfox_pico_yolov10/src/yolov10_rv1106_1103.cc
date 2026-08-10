@@ -209,13 +209,15 @@ int inference_yolov10_model(rknn_app_context_t *app_ctx, image_buffer_t *img, ob
         return -1;
     }
 
-    // letterbox
-    ret = convert_image_with_letterbox(img, &dst_img, &letter_box, bg_color);
-    if (ret < 0)
-    {
-        printf("convert_image_with_letterbox fail! ret=%d\n", ret);
-        return -1;
-    }
+    // ANDREW PATTON: MODIFIED 8/10/2026
+
+    // // letterbox
+    // ret = convert_image_with_letterbox(img, &dst_img, &letter_box, bg_color);
+    // if (ret < 0)
+    // {
+    //     printf("convert_image_with_letterbox fail! ret=%d\n", ret);
+    //     return -1;
+    // }
 
     // Run
     printf("rknn_run\n");
