@@ -15,7 +15,7 @@
 
 #include "rtsp_demo.h"
 #include "luckfox_mpi.h"
-#include "yolov10.h"
+#include "yolo11.h"
 
 #include "opencv2/core/core.hpp"
 #include "opencv2/highgui/highgui.hpp"
@@ -76,9 +76,9 @@ int main(int argc, char *argv[]) {
 	rknn_app_context_t rknn_app_ctx;	
 	object_detect_result_list od_results;
     int ret;
-	const char *model_path = "./model/yolov10.rknn";
+	const char *model_path = "./model/yolo11.rknn";
     memset(&rknn_app_ctx, 0, sizeof(rknn_app_context_t));	
-	init_yolov10_model(model_path, &rknn_app_ctx);
+	init_yolo11_model(model_path, &rknn_app_ctx);
 	printf("init rknn model success!\n");
 	init_post_process();
 
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
             memcpy(rknn_app_ctx.input_mems[0]->virt_addr, letterboxImage.data, model_width*model_height*3);     
             
             // 3. Call inference with the new middle argument
-            inference_yolov10_model(&rknn_app_ctx, &img, &od_results);
+            inference_yolo11_model(&rknn_app_ctx, &img, &od_results);
 
 			for(int i = 0; i < od_results.count; i++)
 			{
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
 										cv::FONT_HERSHEY_SIMPLEX,1,
 										cv::Scalar(0,255,0),2);
 			}
-
+		}
         RK_MPI_SYS_MmzFlushCache(src_Blk, RK_FALSE);			
 		
 		// encode H264
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
 	RK_MPI_SYS_Exit();
 
 	// Release rknn model
-    release_yolov10_model(&rknn_app_ctx);		
+    release_yolo11_model(&rknn_app_ctx);		
 	deinit_post_process();
 	
 	return 0;

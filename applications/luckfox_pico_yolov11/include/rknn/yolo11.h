@@ -13,8 +13,8 @@
 // limitations under the License.
 
 
-#ifndef _RKNN_DEMO_YOLOV10_H_
-#define _RKNN_DEMO_YOLOV10_H_
+#ifndef _RKNN_DEMO_YOLO11_H_
+#define _RKNN_DEMO_YOLO11_H_
 
 #include "rknn_api.h"
 #include "common.h"
@@ -37,6 +37,12 @@ typedef struct {
     rknn_tensor_mem* output_mems[9];
     rknn_dma_buf img_dma_buf;
 #endif
+#if defined(ZERO_COPY)  
+    rknn_tensor_mem* input_mems[1];
+    rknn_tensor_mem* output_mems[9];
+    rknn_tensor_attr* input_native_attrs;
+    rknn_tensor_attr* output_native_attrs;
+#endif
     int model_channel;
     int model_width;
     int model_height;
@@ -46,10 +52,10 @@ typedef struct {
 #include "postprocess.h"
 
 
-int init_yolov10_model(const char* model_path, rknn_app_context_t* app_ctx);
+int init_yolo11_model(const char* model_path, rknn_app_context_t* app_ctx);
 
-int release_yolov10_model(rknn_app_context_t* app_ctx);
+int release_yolo11_model(rknn_app_context_t* app_ctx);
 
-int inference_yolov10_model(rknn_app_context_t* app_ctx, image_buffer_t* img, object_detect_result_list* od_results);
+int inference_yolo11_model(rknn_app_context_t* app_ctx, image_buffer_t* img, object_detect_result_list* od_results);
 
-#endif //_RKNN_DEMO_YOLOV10_H_
+#endif //_RKNN_DEMO_YOLO11_H_

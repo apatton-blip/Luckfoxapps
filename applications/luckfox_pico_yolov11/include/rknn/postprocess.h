@@ -1,5 +1,5 @@
-#ifndef _RKNN_YOLOV10_DEMO_POSTPROCESS_H_
-#define _RKNN_YOLOV10_DEMO_POSTPROCESS_H_
+#ifndef _RKNN_YOLO11_DEMO_POSTPROCESS_H_
+#define _RKNN_YOLO11_DEMO_POSTPROCESS_H_
 
 #include <stdint.h>
 #include <vector>
@@ -33,4 +33,4 @@ char *coco_cls_to_name(int cls_id);
 int post_process(rknn_app_context_t *app_ctx, void *outputs, letterbox_t *letter_box, float conf_threshold, float nms_threshold, object_detect_result_list *od_results);
 
 void deinitPostProcess();
-#endif //_RKNN_YOLOV10_DEMO_POSTPROCESS_H_
+#endif //_RKNN_YOLO11_DEMO_POSTPROCESS_H_

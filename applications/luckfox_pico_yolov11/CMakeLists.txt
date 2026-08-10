@@ -17,7 +17,7 @@ set(CMAKE_CXX_COMPILER "${SDK_PATH}/tools/linux/toolchain/arm-rockchip830-linux-
 
 # Define PROJECT_NAME
 
-project(luckfox_pico_yolov10)
+project(luckfox_pico_yolov11)
 
 # Export Intellisense
 

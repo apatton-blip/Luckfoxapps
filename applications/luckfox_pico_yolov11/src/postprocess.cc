@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "yolov10.h"
+#include "yolo11.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -255,36 +255,42 @@ static int process_u8(uint8_t *box_tensor, int32_t box_zp, float box_scale,
             uint8_t max_score = -score_zp;
             for (int c = 0; c < OBJ_CLASS_NUM; c++)
             {
-                int score_offset = i* grid_w + j + c*grid_len;
-                if (score_tensor[score_offset] > score_thres_u8)
+                if ((score_tensor[offset] > score_thres_u8) && (score_tensor[offset] > max_score))
                 {
-                    max_score = score_tensor[score_offset];
+                    max_score = score_tensor[offset];
                     max_class_id = c;
-                    float box[4];
-                    float before_dfl[dfl_len * 4];
-                    for (int k = 0; k < dfl_len * 4; k++)
-                    {
-                        before_dfl[k] = deqnt_affine_u8_to_f32(box_tensor[offset], box_zp, box_scale);
-                        offset += grid_len;
-                    }
-                    compute_dfl(before_dfl, dfl_len, box);
-
-                    float x1, y1, x2, y2, w, h;
-                    x1 = (-box[0] + j + 0.5) * stride;
-                    y1 = (-box[1] + i + 0.5) * stride;
-                    x2 = (box[2] + j + 0.5) * stride;
-                    y2 = (box[3] + i + 0.5) * stride;
-                    w = x2 - x1;
-                    h = y2 - y1;
-                    boxes.push_back(x1);
-                    boxes.push_back(y1);
-                    boxes.push_back(w);
-                    boxes.push_back(h);
-
-                    objProbs.push_back(deqnt_affine_u8_to_f32(max_score, score_zp, score_scale));
-                    classId.push_back(max_class_id);
-                    validCount++;
                 }
+                offset += grid_len;
+            }
+
+            // compute box
+            if (max_score > score_thres_u8)
+            {
+                offset = i * grid_w + j;
+                float box[4];
+                float before_dfl[dfl_len * 4];
+                for (int k = 0; k < dfl_len * 4; k++)
+                {
+                    before_dfl[k] = deqnt_affine_u8_to_f32(box_tensor[offset], box_zp, box_scale);
+                    offset += grid_len;
+                }
+                compute_dfl(before_dfl, dfl_len, box);
+
+                float x1, y1, x2, y2, w, h;
+                x1 = (-box[0] + j + 0.5) * stride;
+                y1 = (-box[1] + i + 0.5) * stride;
+                x2 = (box[2] + j + 0.5) * stride;
+                y2 = (box[3] + i + 0.5) * stride;
+                w = x2 - x1;
+                h = y2 - y1;
+                boxes.push_back(x1);
+                boxes.push_back(y1);
+                boxes.push_back(w);
+                boxes.push_back(h);
+
+                objProbs.push_back(deqnt_affine_u8_to_f32(max_score, score_zp, score_scale));
+                classId.push_back(max_class_id);
+                validCount++;
             }
         }
     }
@@ -320,37 +326,41 @@ static int process_i8(int8_t *box_tensor, int32_t box_zp, float box_scale,
             }
 
             int8_t max_score = -score_zp;
-            for (int c= 0; c< OBJ_CLASS_NUM; c++)
-            {
-                int score_offset = i* grid_w + j + c*grid_len;
-                if (score_tensor[score_offset] > score_thres_i8)
+            for (int c= 0; c< OBJ_CLASS_NUM; c++){
+                if ((score_tensor[offset] > score_thres_i8) && (score_tensor[offset] > max_score))
                 {
-                    max_score = score_tensor[score_offset];
+                    max_score = score_tensor[offset];
                     max_class_id = c;
-                    float box[4];
-                    float before_dfl[dfl_len*4];
-                    for (int k=0; k< dfl_len*4; k++){
-                        before_dfl[k] = deqnt_affine_to_f32(box_tensor[offset], box_zp, box_scale);
-                        offset += grid_len;
-                    }
-                    compute_dfl(before_dfl, dfl_len, box);
-
-                    float x1,y1,x2,y2,w,h;
-                    x1 = (-box[0] + j + 0.5)*stride;
-                    y1 = (-box[1] + i + 0.5)*stride;
-                    x2 = (box[2] + j + 0.5)*stride;
-                    y2 = (box[3] + i + 0.5)*stride;
-                    w = x2 - x1;
-                    h = y2 - y1;
-                    boxes.push_back(x1);
-                    boxes.push_back(y1);
-                    boxes.push_back(w);
-                    boxes.push_back(h);
-
-                    objProbs.push_back(deqnt_affine_to_f32(max_score, score_zp, score_scale));
-                    classId.push_back(max_class_id);
-                    validCount ++;
                 }
+                offset += grid_len;
+            }
+
+            // compute box
+            if (max_score> score_thres_i8){
+                offset = i* grid_w + j;
+                float box[4];
+                float before_dfl[dfl_len*4];
+                for (int k=0; k< dfl_len*4; k++){
+                    before_dfl[k] = deqnt_affine_to_f32(box_tensor[offset], box_zp, box_scale);
+                    offset += grid_len;
+                }
+                compute_dfl(before_dfl, dfl_len, box);
+
+                float x1,y1,x2,y2,w,h;
+                x1 = (-box[0] + j + 0.5)*stride;
+                y1 = (-box[1] + i + 0.5)*stride;
+                x2 = (box[2] + j + 0.5)*stride;
+                y2 = (box[3] + i + 0.5)*stride;
+                w = x2 - x1;
+                h = y2 - y1;
+                boxes.push_back(x1);
+                boxes.push_back(y1);
+                boxes.push_back(w);
+                boxes.push_back(h);
+
+                objProbs.push_back(deqnt_affine_to_f32(max_score, score_zp, score_scale));
+                classId.push_back(max_class_id);
+                validCount ++;
             }
         }
     }
@@ -381,37 +391,41 @@ static int process_fp32(float *box_tensor, float *score_tensor, float *score_sum
             }
 
             float max_score = 0;
-            for (int c= 0; c< OBJ_CLASS_NUM; c++)
-            {
-                int score_offset = i* grid_w + j + c*grid_len;
-                if (score_tensor[score_offset] > threshold)
+            for (int c= 0; c< OBJ_CLASS_NUM; c++){
+                if ((score_tensor[offset] > threshold) && (score_tensor[offset] > max_score))
                 {
-                    max_score = score_tensor[score_offset];
+                    max_score = score_tensor[offset];
                     max_class_id = c;
-                    float box[4];
-                    float before_dfl[dfl_len*4];
-                    for (int k=0; k< dfl_len*4; k++){
-                        before_dfl[k] = box_tensor[offset];
-                        offset += grid_len;
-                    }
-                    compute_dfl(before_dfl, dfl_len, box);
-
-                    float x1,y1,x2,y2,w,h;
-                    x1 = (-box[0] + j + 0.5)*stride;
-                    y1 = (-box[1] + i + 0.5)*stride;
-                    x2 = (box[2] + j + 0.5)*stride;
-                    y2 = (box[3] + i + 0.5)*stride;
-                    w = x2 - x1;
-                    h = y2 - y1;
-                    boxes.push_back(x1);
-                    boxes.push_back(y1);
-                    boxes.push_back(w);
-                    boxes.push_back(h);
-
-                    objProbs.push_back(max_score);
-                    classId.push_back(max_class_id);
-                    validCount ++;
                 }
+                offset += grid_len;
+            }
+
+            // compute box
+            if (max_score> threshold){
+                offset = i* grid_w + j;
+                float box[4];
+                float before_dfl[dfl_len*4];
+                for (int k=0; k< dfl_len*4; k++){
+                    before_dfl[k] = box_tensor[offset];
+                    offset += grid_len;
+                }
+                compute_dfl(before_dfl, dfl_len, box);
+
+                float x1,y1,x2,y2,w,h;
+                x1 = (-box[0] + j + 0.5)*stride;
+                y1 = (-box[1] + i + 0.5)*stride;
+                x2 = (box[2] + j + 0.5)*stride;
+                y2 = (box[3] + i + 0.5)*stride;
+                w = x2 - x1;
+                h = y2 - y1;
+                boxes.push_back(x1);
+                boxes.push_back(y1);
+                boxes.push_back(w);
+                boxes.push_back(h);
+
+                objProbs.push_back(max_score);
+                classId.push_back(max_class_id);
+                validCount ++;
             }
         }
     }
@@ -483,8 +497,8 @@ static int process_i8_rv1106(int8_t *box_tensor, int32_t box_zp, float box_scale
             }
         }
     }
-    printf("validCount=%d\n", validCount);
-    printf("grid h-%d, w-%d, stride %d\n", grid_h, grid_w, stride);
+    // printf("validCount=%d\n", validCount);
+    // printf("grid h-%d, w-%d, stride %d\n", grid_h, grid_w, stride);
     return validCount;
 }
 #endif
@@ -602,6 +616,13 @@ int post_process(rknn_app_context_t *app_ctx, void *outputs, letterbox_t *letter
         indexArray.push_back(i);
     }
     quick_sort_indice_inverse(objProbs, 0, validCount - 1, indexArray);
+
+    std::set<int> class_set(std::begin(classId), std::end(classId));
+
+    for (auto c : class_set)
+    {
+        nms(validCount, filterBoxes, classId, indexArray, c, nms_threshold);
+    }
 
     int last_count = 0;
     od_results->count = 0;

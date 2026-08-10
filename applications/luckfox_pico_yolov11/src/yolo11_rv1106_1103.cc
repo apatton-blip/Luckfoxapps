@@ -17,7 +17,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "yolov10.h"
+#include "yolo11.h"
 #include "common.h"
 #include "file_utils.h"
 #include "image_utils.h"
@@ -31,9 +31,11 @@ static void dump_tensor_attr(rknn_tensor_attr *attr)
            get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
 }
 
-int init_yolov10_model(const char *model_path, rknn_app_context_t *app_ctx)
+int init_yolo11_model(const char *model_path, rknn_app_context_t *app_ctx)
 {
     int ret;
+    int model_len = 0;
+    char *model;
     rknn_context ctx = 0;
 
     ret = rknn_init(&ctx, (char *)model_path, 0, 0, NULL);
@@ -150,7 +152,7 @@ int init_yolov10_model(const char *model_path, rknn_app_context_t *app_ctx)
     return 0;
 }
 
-int release_yolov10_model(rknn_app_context_t *app_ctx)
+int release_yolo11_model(rknn_app_context_t *app_ctx)
 {    
     if (app_ctx->input_attrs != NULL)
     {
@@ -180,7 +182,7 @@ int release_yolov10_model(rknn_app_context_t *app_ctx)
     return 0;
 }
 
-int inference_yolov10_model(rknn_app_context_t *app_ctx, image_buffer_t *img, object_detect_result_list *od_results)
+int inference_yolo11_model(rknn_app_context_t *app_ctx, image_buffer_t *img, object_detect_result_list *od_results)
 {
     int ret;
     image_buffer_t dst_img;
@@ -211,14 +213,14 @@ int inference_yolov10_model(rknn_app_context_t *app_ctx, image_buffer_t *img, ob
 
     // ANDREW PATTON: MODIFIED 8/10/2026
 
-    // // letterbox
+    // letterbox
     // ret = convert_image_with_letterbox(img, &dst_img, &letter_box, bg_color);
     // if (ret < 0)
     // {
     //     printf("convert_image_with_letterbox fail! ret=%d\n", ret);
     //     return -1;
     // }
-    
+
     letter_box.x_pad = 0;
     letter_box.y_pad = 0;
     letter_box.scale = 1.0f;
