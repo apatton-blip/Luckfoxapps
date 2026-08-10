@@ -156,59 +156,52 @@ int main(int argc, char *argv[]) {
 		{
 			void *vi_data = RK_MPI_MB_Handle2VirAddr(stViFrame.stVFrame.pMbBlk);	
 
-			cv::Mat yuv420sp(height + height / 2, width, CV_8UC1, vi_data);
-			cv::Mat bgr(height, width, CV_8UC3, data);			
-			
-			cv::cvtColor(yuv420sp, bgr, cv::COLOR_YUV420sp2RGB);
-			cv::resize(bgr, frame, cv::Size(width ,height), 0, 0, cv::INTER_LINEAR);
-			
-			//letterbox
+            cv::Mat yuv420sp(height + height / 2, width, CV_8UC1, vi_data);
+            
+            // Write directly into the hardware memory buffer 'data'
+            cv::cvtColor(yuv420sp, frame, cv::COLOR_YUV420sp2BGR);
+            
+            // Create letterbox for NPU
             cv::Mat letterboxImage = letterbox(frame);  
             
-            // 1. Wrap the OpenCV Mat in Rockchip's image_buffer_t struct
             image_buffer_t img;
             memset(&img, 0, sizeof(image_buffer_t));
             img.width = model_width;           // 640
             img.height = model_height;         // 640
             img.width_stride = model_width;
             img.height_stride = model_height;
-            img.format = IMAGE_FORMAT_RGB888;  // OpenCV uses BGR natively
+            img.format = IMAGE_FORMAT_RGB888;
             img.virt_addr = letterboxImage.data;
 
-            // 2. Keep your memory copy (the YOLOv10 wrapper will gracefully pass this through)
             memcpy(rknn_app_ctx.input_mems[0]->virt_addr, letterboxImage.data, model_width*model_height*3);     
             
             // 3. Call inference with the new middle argument
             inference_yolov10_model(&rknn_app_ctx, &img, &od_results);
 
 			for(int i = 0; i < od_results.count; i++)
-			{					
-				if(od_results.count >= 1)
-				{
-					object_detect_result *det_result = &(od_results.results[i]);
-	
-					sX = (int)(det_result->box.left   );	
-					sY = (int)(det_result->box.top 	  );	
-					eX = (int)(det_result->box.right  );	
-					eY = (int)(det_result->box.bottom );
-					mapCoordinates(&sX,&sY);
-					mapCoordinates(&eX,&eY);
-					
-					printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
-							 sX, sY, eX, eY, det_result->prop);
+			{
+				object_detect_result *det_result = &(od_results.results[i]);
 
-					cv::rectangle(frame,cv::Point(sX ,sY),
-								        cv::Point(eX ,eY),
-										cv::Scalar(0,255,0),3);
-					sprintf(text, "%s %.1f%%", coco_cls_to_name(det_result->cls_id), det_result->prop * 100);
-					cv::putText(frame,text,cv::Point(sX, sY - 8),
-										   cv::FONT_HERSHEY_SIMPLEX,1,
-										   cv::Scalar(0,255,0),2);
-				}
+				sX = (int)(det_result->box.left   );	
+				sY = (int)(det_result->box.top 	  );	
+				eX = (int)(det_result->box.right  );	
+				eY = (int)(det_result->box.bottom );
+				mapCoordinates(&sX,&sY);
+				mapCoordinates(&eX,&eY);
+				
+				printf("%s @ (%d %d %d %d) %.3f\n", coco_cls_to_name(det_result->cls_id),
+							sX, sY, eX, eY, det_result->prop);
+
+				cv::rectangle(frame,cv::Point(sX ,sY),
+									cv::Point(eX ,eY),
+									cv::Scalar(0,255,0),3);
+				sprintf(text, "%s %.1f%%", coco_cls_to_name(det_result->cls_id), det_result->prop * 100);
+				cv::putText(frame,text,	cv::Point(sX, sY - 8),
+										cv::FONT_HERSHEY_SIMPLEX,1,
+										cv::Scalar(0,255,0),2);
 			}
 
-		}
-		memcpy(data, frame.data, width * height * 3);					
+        RK_MPI_SYS_MmzFlushCache(src_Blk, RK_FALSE);			
 		
 		// encode H264
 		RK_MPI_VENC_SendFrame(0, &h264_frame,-1);

@@ -218,6 +218,10 @@ int inference_yolov10_model(rknn_app_context_t *app_ctx, image_buffer_t *img, ob
     //     printf("convert_image_with_letterbox fail! ret=%d\n", ret);
     //     return -1;
     // }
+    
+    letter_box.x_pad = 0;
+    letter_box.y_pad = 0;
+    letter_box.scale = 1.0f;
 
     // Run
     printf("rknn_run\n");
