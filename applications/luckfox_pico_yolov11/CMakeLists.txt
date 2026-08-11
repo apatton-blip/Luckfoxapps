@@ -34,13 +34,25 @@ add_definitions(-DRV1106_1103)
 
 # Create .exe from SRCs
 
-file(GLOB SRC_FILES
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cc"
-    "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/file_utils.c"
-    "${CMAKE_CURRENT_SOURCE_DIR}/utils/image_utils.c"
-)
+if (COMPILE_EVAL)
+    file(GLOB SRC_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/eval.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/postprocess.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/luckfox_mpi.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/yolo11_rv1106_1103.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/file_utils.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/image_utils.c"
+    )
+else()
+    file(GLOB SRC_FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/postprocess.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/luckfox_mpi.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/yolo11_rv1106_1103.cc"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/file_utils.c"
+        "${CMAKE_CURRENT_SOURCE_DIR}/utils/image_utils.c"
+    )
+endif()
 
 # Library search paths
 
