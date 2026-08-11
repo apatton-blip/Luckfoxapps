@@ -29,7 +29,7 @@ cd "${APP_DIR}"
 
 echo Starting Build...
 
-cmake -B build
+${CMAKE_BUILD_SCRIPT}
 
 cmake --build build
 
