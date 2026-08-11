@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
             h264_frame.stVFrame.u64PTS = TEST_COMM_GetNowUs();
             
             char img_path[256];
-            sprintf(img_path, "./model/test_frames/ezgif-frame-%03d.jpg", frame_index + 1);
+            sprintf(img_path, "./../test_frames/ezgif-frame-%03d.jpg", frame_index + 1);
             
             cv::Mat loaded_img = cv::imread(img_path);
 

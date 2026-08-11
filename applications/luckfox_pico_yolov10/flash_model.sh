@@ -1,3 +1,6 @@
 #!/bin/bash
 
-scp -r /home/development/applications/luckfox_pico_yolov10/model root@172.32.0.93:/root
+APP=luckfox_pico_yolov10
+source ../../scripts/common.sh
+
+scp -r ${APP_DIR}/model root@${DEFAULT_IP}:${LUCKFOX_HOME_DIR}
