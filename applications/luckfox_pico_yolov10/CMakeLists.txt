@@ -32,6 +32,10 @@ set(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
 add_definitions(-DRV1106_1103)
 # add_definitions(-DISABLE_LIBJPEG)
 
+if(SAMPLE1)
+    add_definitions(-DSAMPLE1)
+endif()
+
 # Create .exe from SRCs
 
 if (COMPILE_EVAL)

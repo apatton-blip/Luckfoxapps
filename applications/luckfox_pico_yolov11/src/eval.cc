@@ -24,7 +24,14 @@
 
 #define DISP_WIDTH  720
 #define DISP_HEIGHT 480
-#define NUM_FRAMES 120
+
+#ifdef SAMPLE1
+	#define NUM_FRAMES 120
+	#define IMGS_PATH "./../test_frames/"
+#else
+	#define NUM_FRAMES 150
+	#define IMGS_PATH "./../sample_video2/"
+#endif
 
 // disp size
 int width    = DISP_WIDTH;
@@ -146,7 +153,7 @@ int main(int argc, char *argv[]) {
             h264_frame.stVFrame.u64PTS = TEST_COMM_GetNowUs();
             
             char img_path[256];
-            sprintf(img_path, "./../test_frames/ezgif-frame-%03d.jpg", frame_index + 1);
+            sprintf(img_path, IMGS_PATH"ezgif-frame-%03d.jpg", frame_index + 1);
             
             cv::Mat loaded_img = cv::imread(img_path);
 
