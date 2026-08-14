@@ -5,7 +5,12 @@
 #ifndef YOLOVXX_CPT_H
 #define YOLOVXX_CPT_H
 
-#if YOLO_VERSION == 10
+#if YOLO_VERSION == 8
+    #include "yolov8.h"
+    #define INIT_YOLO init_yolov8_model
+    #define INFER_YOLO(ctx, img, res) inference_yolov8_model(ctx, img, res)
+    #define RELEASE_YOLO release_yolov8_model
+#elif YOLO_VERSION == 10
     #include "yolov10.h"
     #define INIT_YOLO init_yolov10_model
     #define INFER_YOLO(ctx, img, res) inference_yolov10_model(ctx, img, res)
@@ -15,6 +20,11 @@
     #define INIT_YOLO init_yolov11_model
     #define INFER_YOLO(ctx, img, res) inference_yolov11_model(ctx, img, res)
     #define RELEASE_YOLO release_yolov11_model
+#elif YOLO_VERSION == 26
+    #include "yolo26.h"
+    #define INIT_YOLO init_yolo26_model
+    #define INFER_YOLO(ctx, img, res) inference_yolo26_model(ctx, img, res)
+    #define RELEASE_YOLO release_yolo26_model
 #else
     #error "Unsupported YOLO_VERSION specified in CMake!"
 #endif

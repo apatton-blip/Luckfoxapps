@@ -1,8 +1,14 @@
-APP := yolovxx_sample
+APP := ../custom_lib/yolovxx
+
 include /home/development/makescripts.mk
 
-build_eval: CMAKE_BUILD_SCRIPT = "cmake -B build -DCOMPILE_EVAL=ON -DCOMPILE_EVAL=ON -DSAMPLE1=ON"
-build_eval: build
+CMAKE_BUILD_TEMPLATE = cmake -B build -DYOLO_VERSION=
 
-build_eval2: CMAKE_BUILD_SCRIPT = "cmake -B build -DCOMPILE_EVAL=ON -DCOMPILE_EVAL=ON -DSAMPLE1=OFF"
-build_eval2: build
+YOLO_VERSIONS := y8 y10 y11 y26
+
+y8: CMAKE_BUILD_SCRIPT = "$(CMAKE_BUILD_TEMPLATE)8"
+y10: CMAKE_BUILD_SCRIPT = "$(CMAKE_BUILD_TEMPLATE)10"
+y11: CMAKE_BUILD_SCRIPT = "$(CMAKE_BUILD_TEMPLATE)11"
+y26: CMAKE_BUILD_SCRIPT = "$(CMAKE_BUILD_TEMPLATE)26"
+
+$(YOLO_VERSIONS): build

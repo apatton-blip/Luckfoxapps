@@ -6,8 +6,8 @@ set(LIBC_TYPE "uclibc")
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/${LIBC_TYPE})
 
-set(USE_YOLO_VERSION "10" CACHE STRING "YOLO model version to compile (5, 10, 11)")
-message(STATUS "Configuring build for YOLO version: ${USE_YOLO_VERSION}")
+set(YOLO_VERSION "10" CACHE STRING "YOLO model version to compile (5, 10, 11)")
+message(STATUS "Configuring build for YOLO version: ${YOLO_VERSION}")
 
 set(OpenCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/${LIBC_TYPE}/lib/cmake/opencv4")
 find_package(OpenCV REQUIRED) # Define OpenCV_LIBS
@@ -18,6 +18,8 @@ set(CMAKE_CXX_COMPILER "${SDK_PATH}/tools/linux/toolchain/arm-rockchip830-linux-
 # Define PROJECT_NAME
 
 project(yolovxx_sample)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/out)
 
 # Export Intellisense
 
@@ -35,7 +37,7 @@ add_definitions(-DDISABLE_LIBJPEG)
 set(COMMON_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/rknn
-    ${CMAKE_CURRENT_SOURCE_DIR}/yolo_zoo/${USE_YOLO_VERSION}
+    ${CMAKE_CURRENT_SOURCE_DIR}/yolo_zoo/${YOLO_VERSION}
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librga
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/stb_image
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
@@ -65,7 +67,7 @@ add_library(yolovxx_lib STATIC
 
 set_target_properties(yolovxx_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-target_compile_definitions(yolovxx_lib PUBLIC YOLO_VERSION=${USE_YOLO_VERSION})
+target_compile_definitions(yolovxx_lib PUBLIC YOLO_VERSION=${YOLO_VERSION})
 
 target_include_directories(yolovxx_lib PUBLIC
     ${COMMON_INCLUDE_DIRS}
@@ -81,4 +83,8 @@ target_link_libraries(yolovxx_lib
     rkaiq
     sample_comm
     rtsp
+)
+
+set_target_properties(yolovxx_lib PROPERTIES
+    OUTPUT_NAME "yolovxx_${YOLO_VERSION}"
 )
