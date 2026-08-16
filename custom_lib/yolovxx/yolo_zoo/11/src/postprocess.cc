@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "yolo26.h"
+#include "yolo11.h"
 
 #include <math.h>
 #include <stdint.h>
@@ -255,36 +255,42 @@ static int process_u8(uint8_t *box_tensor, int32_t box_zp, float box_scale,
             uint8_t max_score = -score_zp;
             for (int c = 0; c < OBJ_CLASS_NUM; c++)
             {
-                int score_offset = i* grid_w + j + c*grid_len;
-                if (score_tensor[score_offset] > score_thres_u8)
+                if ((score_tensor[offset] > score_thres_u8) && (score_tensor[offset] > max_score))
                 {
-                    max_score = score_tensor[score_offset];
+                    max_score = score_tensor[offset];
                     max_class_id = c;
-                    float box[4];
-                    float before_dfl[dfl_len * 4];
-                    for (int k = 0; k < dfl_len * 4; k++)
-                    {
-                        before_dfl[k] = deqnt_affine_u8_to_f32(box_tensor[offset], box_zp, box_scale);
-                        offset += grid_len;
-                    }
-                    compute_dfl(before_dfl, dfl_len, box);
-
-                    float x1, y1, x2, y2, w, h;
-                    x1 = (-box[0] + j + 0.5) * stride;
-                    y1 = (-box[1] + i + 0.5) * stride;
-                    x2 = (box[2] + j + 0.5) * stride;
-                    y2 = (box[3] + i + 0.5) * stride;
-                    w = x2 - x1;
-                    h = y2 - y1;
-                    boxes.push_back(x1);
-                    boxes.push_back(y1);
-                    boxes.push_back(w);
-                    boxes.push_back(h);
-
-                    objProbs.push_back(deqnt_affine_u8_to_f32(max_score, score_zp, score_scale));
-                    classId.push_back(max_class_id);
-                    validCount++;
                 }
+                offset += grid_len;
+            }
+
+            // compute box
+            if (max_score > score_thres_u8)
+            {
+                offset = i * grid_w + j;
+                float box[4];
+                float before_dfl[dfl_len * 4];
+                for (int k = 0; k < dfl_len * 4; k++)
+                {
+                    before_dfl[k] = deqnt_affine_u8_to_f32(box_tensor[offset], box_zp, box_scale);
+                    offset += grid_len;
+                }
+                compute_dfl(before_dfl, dfl_len, box);
+
+                float x1, y1, x2, y2, w, h;
+                x1 = (-box[0] + j + 0.5) * stride;
+                y1 = (-box[1] + i + 0.5) * stride;
+                x2 = (box[2] + j + 0.5) * stride;
+                y2 = (box[3] + i + 0.5) * stride;
+                w = x2 - x1;
+                h = y2 - y1;
+                boxes.push_back(x1);
+                boxes.push_back(y1);
+                boxes.push_back(w);
+                boxes.push_back(h);
+
+                objProbs.push_back(deqnt_affine_u8_to_f32(max_score, score_zp, score_scale));
+                classId.push_back(max_class_id);
+                validCount++;
             }
         }
     }
@@ -320,37 +326,41 @@ static int process_i8(int8_t *box_tensor, int32_t box_zp, float box_scale,
             }
 
             int8_t max_score = -score_zp;
-            for (int c= 0; c< OBJ_CLASS_NUM; c++)
-            {
-                int score_offset = i* grid_w + j + c*grid_len;
-                if (score_tensor[score_offset] > score_thres_i8)
+            for (int c= 0; c< OBJ_CLASS_NUM; c++){
+                if ((score_tensor[offset] > score_thres_i8) && (score_tensor[offset] > max_score))
                 {
-                    max_score = score_tensor[score_offset];
+                    max_score = score_tensor[offset];
                     max_class_id = c;
-                    float box[4];
-                    float before_dfl[dfl_len*4];
-                    for (int k=0; k< dfl_len*4; k++){
-                        before_dfl[k] = deqnt_affine_to_f32(box_tensor[offset], box_zp, box_scale);
-                        offset += grid_len;
-                    }
-                    compute_dfl(before_dfl, dfl_len, box);
-
-                    float x1,y1,x2,y2,w,h;
-                    x1 = (-box[0] + j + 0.5)*stride;
-                    y1 = (-box[1] + i + 0.5)*stride;
-                    x2 = (box[2] + j + 0.5)*stride;
-                    y2 = (box[3] + i + 0.5)*stride;
-                    w = x2 - x1;
-                    h = y2 - y1;
-                    boxes.push_back(x1);
-                    boxes.push_back(y1);
-                    boxes.push_back(w);
-                    boxes.push_back(h);
-
-                    objProbs.push_back(deqnt_affine_to_f32(max_score, score_zp, score_scale));
-                    classId.push_back(max_class_id);
-                    validCount ++;
                 }
+                offset += grid_len;
+            }
+
+            // compute box
+            if (max_score> score_thres_i8){
+                offset = i* grid_w + j;
+                float box[4];
+                float before_dfl[dfl_len*4];
+                for (int k=0; k< dfl_len*4; k++){
+                    before_dfl[k] = deqnt_affine_to_f32(box_tensor[offset], box_zp, box_scale);
+                    offset += grid_len;
+                }
+                compute_dfl(before_dfl, dfl_len, box);
+
+                float x1,y1,x2,y2,w,h;
+                x1 = (-box[0] + j + 0.5)*stride;
+                y1 = (-box[1] + i + 0.5)*stride;
+                x2 = (box[2] + j + 0.5)*stride;
+                y2 = (box[3] + i + 0.5)*stride;
+                w = x2 - x1;
+                h = y2 - y1;
+                boxes.push_back(x1);
+                boxes.push_back(y1);
+                boxes.push_back(w);
+                boxes.push_back(h);
+
+                objProbs.push_back(deqnt_affine_to_f32(max_score, score_zp, score_scale));
+                classId.push_back(max_class_id);
+                validCount ++;
             }
         }
     }
@@ -362,8 +372,7 @@ static int process_fp32(float *box_tensor, float *score_tensor, float *score_sum
                         std::vector<float> &boxes, 
                         std::vector<float> &objProbs, 
                         std::vector<int> &classId, 
-                        float threshold)
-{
+                        float threshold){
     int validCount = 0;
     int grid_len = grid_h * grid_w;
     for (int i = 0; i < grid_h; i++)
@@ -381,37 +390,41 @@ static int process_fp32(float *box_tensor, float *score_tensor, float *score_sum
             }
 
             float max_score = 0;
-            for (int c= 0; c< OBJ_CLASS_NUM; c++)
-            {
-                int score_offset = i* grid_w + j + c*grid_len;
-                if (score_tensor[score_offset] > threshold)
+            for (int c= 0; c< OBJ_CLASS_NUM; c++){
+                if ((score_tensor[offset] > threshold) && (score_tensor[offset] > max_score))
                 {
-                    max_score = score_tensor[score_offset];
+                    max_score = score_tensor[offset];
                     max_class_id = c;
-                    float box[4];
-                    float before_dfl[dfl_len*4];
-                    for (int k=0; k< dfl_len*4; k++){
-                        before_dfl[k] = box_tensor[offset];
-                        offset += grid_len;
-                    }
-                    compute_dfl(before_dfl, dfl_len, box);
-
-                    float x1,y1,x2,y2,w,h;
-                    x1 = (-box[0] + j + 0.5)*stride;
-                    y1 = (-box[1] + i + 0.5)*stride;
-                    x2 = (box[2] + j + 0.5)*stride;
-                    y2 = (box[3] + i + 0.5)*stride;
-                    w = x2 - x1;
-                    h = y2 - y1;
-                    boxes.push_back(x1);
-                    boxes.push_back(y1);
-                    boxes.push_back(w);
-                    boxes.push_back(h);
-
-                    objProbs.push_back(max_score);
-                    classId.push_back(max_class_id);
-                    validCount ++;
                 }
+                offset += grid_len;
+            }
+
+            // compute box
+            if (max_score> threshold){
+                offset = i* grid_w + j;
+                float box[4];
+                float before_dfl[dfl_len*4];
+                for (int k=0; k< dfl_len*4; k++){
+                    before_dfl[k] = box_tensor[offset];
+                    offset += grid_len;
+                }
+                compute_dfl(before_dfl, dfl_len, box);
+
+                float x1,y1,x2,y2,w,h;
+                x1 = (-box[0] + j + 0.5)*stride;
+                y1 = (-box[1] + i + 0.5)*stride;
+                x2 = (box[2] + j + 0.5)*stride;
+                y2 = (box[3] + i + 0.5)*stride;
+                w = x2 - x1;
+                h = y2 - y1;
+                boxes.push_back(x1);
+                boxes.push_back(y1);
+                boxes.push_back(w);
+                boxes.push_back(h);
+
+                objProbs.push_back(max_score);
+                classId.push_back(max_class_id);
+                validCount ++;
             }
         }
     }
@@ -488,78 +501,164 @@ static int process_i8_rv1106(int8_t *box_tensor, int32_t box_zp, float box_scale
     return validCount;
 }
 #endif
-// You keep your deqnt_affine_to_f32, clamp, etc.
 
-int post_process(rknn_app_context_t *app_ctx, void *outputs, letterbox_t *letter_box, float conf_threshold, float nms_threshold, object_detect_result_list *od_results)
+int post_process(rknn_app_context_t *app_ctx,
+    void *outputs,
+    letterbox_t *letter_box, 
+    float conf_threshold,
+    float nms_threshold, 
+    object_detect_result_list *od_results)
 {
 #if defined(RV1106_1103) 
     rknn_tensor_mem **_outputs = (rknn_tensor_mem **)outputs;
 #else
     rknn_output *_outputs = (rknn_output *)outputs;
 #endif
+    std::vector<float> filterBoxes;
+    std::vector<float> objProbs;
+    std::vector<int> classId;
+    int validCount = 0;
+    int stride = 0;
+    int grid_h = 0;
+    int grid_w = 0;
+    int model_in_w = app_ctx->model_width;
+    int model_in_h = app_ctx->model_height;
 
     memset(od_results, 0, sizeof(object_detect_result_list));
-    int last_count = 0;
 
-    // YOLO26 outputs a single tensor of shape [1, 300, 6]
-    // Get the pointer, zero-point, and scale for this single output
-#if defined(RV1106_1103)
-    int8_t *output_tensor = (int8_t *)_outputs[0]->virt_addr;
+    // default 3 branch
+#ifdef RKNPU1
+    int dfl_len = app_ctx->output_attrs[0].dims[2] / 4;
 #else
-    int8_t *output_tensor = (int8_t *)_outputs[0].buf;
+    int dfl_len = app_ctx->output_attrs[0].dims[1] /4;
 #endif
-    
-    int32_t zp = app_ctx->output_attrs[0].zp;
-    float scale = app_ctx->output_attrs[0].scale;
-    
-    // N = 300 predictions
-    int num_predictions = app_ctx->output_attrs[0].dims[1]; // Should be 300
-    int elements_per_pred = app_ctx->output_attrs[0].dims[2]; // Should be 6
-
-    for (int i = 0; i < num_predictions; ++i)
+    int output_per_branch = app_ctx->io_num.n_output / 3;
+    for (int i = 0; i < 3; i++)
     {
-        int offset = i * elements_per_pred;
-
-        // 1. Dequantize confidence score (Index 4)
-        float conf = deqnt_affine_to_f32(output_tensor[offset + 4], zp, scale);
-
-        // 2. Filter by threshold
-        if (conf >= conf_threshold)
-        {
-            // 3. Dequantize Coordinates (Indices 0, 1, 2, 3) and Class ID (Index 5)
-            // Assuming the export format is [x1, y1, x2, y2, conf, cls_id]
-            float x1 = deqnt_affine_to_f32(output_tensor[offset + 0], zp, scale);
-            float y1 = deqnt_affine_to_f32(output_tensor[offset + 1], zp, scale);
-            float x2 = deqnt_affine_to_f32(output_tensor[offset + 2], zp, scale);
-            float y2 = deqnt_affine_to_f32(output_tensor[offset + 3], zp, scale);
-            
-            float cls_id_f = deqnt_affine_to_f32(output_tensor[offset + 5], zp, scale);
-            int cls_id = (int)(cls_id_f + 0.5f); // Round to nearest integer
-
-            // 4. Revert letterbox padding
-            x1 = x1 - letter_box->x_pad;
-            y1 = y1 - letter_box->y_pad;
-            x2 = x2 - letter_box->x_pad;
-            y2 = y2 - letter_box->y_pad;
-
-            // 5. Scale back to original image size and clamp
-            od_results->results[last_count].box.left = (int)(clamp(x1, 0, app_ctx->model_width) / letter_box->scale);
-            od_results->results[last_count].box.top = (int)(clamp(y1, 0, app_ctx->model_height) / letter_box->scale);
-            od_results->results[last_count].box.right = (int)(clamp(x2, 0, app_ctx->model_width) / letter_box->scale);
-            od_results->results[last_count].box.bottom = (int)(clamp(y2, 0, app_ctx->model_height) / letter_box->scale);
-            od_results->results[last_count].prop = conf;
-            od_results->results[last_count].cls_id = cls_id;
-
-            last_count++;
-            if (last_count >= OBJ_NUMB_MAX_SIZE) {
-                break;
-            }
+#if defined(RV1106_1103)
+        dfl_len = app_ctx->output_attrs[0].dims[3] /4;
+        void *score_sum = nullptr;
+        int32_t score_sum_zp = 0;
+        float score_sum_scale = 1.0;
+        if (output_per_branch == 3) {
+            score_sum = _outputs[i * output_per_branch + 2]->virt_addr;
+            score_sum_zp = app_ctx->output_attrs[i * output_per_branch + 2].zp;
+            score_sum_scale = app_ctx->output_attrs[i * output_per_branch + 2].scale;
         }
+        int box_idx = i * output_per_branch;
+        int score_idx = i * output_per_branch + 1;
+        grid_h = app_ctx->output_attrs[box_idx].dims[1];
+        grid_w = app_ctx->output_attrs[box_idx].dims[2];
+        stride = model_in_h / grid_h;
+        
+        if (app_ctx->is_quant) {
+            validCount += process_i8_rv1106((int8_t *)_outputs[box_idx]->virt_addr, app_ctx->output_attrs[box_idx].zp, app_ctx->output_attrs[box_idx].scale,
+                                (int8_t *)_outputs[score_idx]->virt_addr, app_ctx->output_attrs[score_idx].zp,
+                                app_ctx->output_attrs[score_idx].scale, (int8_t *)score_sum, score_sum_zp, score_sum_scale,
+                                grid_h, grid_w, stride, dfl_len, filterBoxes, objProbs, classId, conf_threshold);
+        }
+        else
+        {
+            printf("RV1106/1103 only support quantization mode\n", LABEL_NALE_TXT_PATH);
+            return -1;
+        }
+
+#else
+        void *score_sum = nullptr;
+        int32_t score_sum_zp = 0;
+        float score_sum_scale = 1.0;
+        if (output_per_branch == 3){
+            score_sum = _outputs[i*output_per_branch + 2].buf;
+            score_sum_zp = app_ctx->output_attrs[i*output_per_branch + 2].zp;
+            score_sum_scale = app_ctx->output_attrs[i*output_per_branch + 2].scale;
+        }
+        int box_idx = i*output_per_branch;
+        int score_idx = i*output_per_branch + 1;
+
+#ifdef RKNPU1
+        grid_h = app_ctx->output_attrs[box_idx].dims[1];
+        grid_w = app_ctx->output_attrs[box_idx].dims[0];
+#else
+        grid_h = app_ctx->output_attrs[box_idx].dims[2];
+        grid_w = app_ctx->output_attrs[box_idx].dims[3];
+#endif
+        stride = model_in_h / grid_h;
+
+        if (app_ctx->is_quant)
+        {
+#ifdef RKNPU1
+            validCount += process_u8((uint8_t *)_outputs[box_idx].buf, app_ctx->output_attrs[box_idx].zp, app_ctx->output_attrs[box_idx].scale,
+                                     (uint8_t *)_outputs[score_idx].buf, app_ctx->output_attrs[score_idx].zp, app_ctx->output_attrs[score_idx].scale,
+                                     (uint8_t *)score_sum, score_sum_zp, score_sum_scale,
+                                     grid_h, grid_w, stride, dfl_len,
+                                     filterBoxes, objProbs, classId, conf_threshold);
+#else
+            validCount += process_i8((int8_t *)_outputs[box_idx].buf, app_ctx->output_attrs[box_idx].zp, app_ctx->output_attrs[box_idx].scale,
+                                     (int8_t *)_outputs[score_idx].buf, app_ctx->output_attrs[score_idx].zp, app_ctx->output_attrs[score_idx].scale,
+                                     (int8_t *)score_sum, score_sum_zp, score_sum_scale,
+                                     grid_h, grid_w, stride, dfl_len, 
+                                     filterBoxes, objProbs, classId, conf_threshold);
+#endif
+        }
+        else
+        {
+            validCount += process_fp32((float *)_outputs[box_idx].buf, (float *)_outputs[score_idx].buf, (float *)score_sum,
+                                       grid_h, grid_w, stride, dfl_len, 
+                                       filterBoxes, objProbs, classId, conf_threshold);
+        }
+#endif
     }
 
+    // no object detect
+    if (validCount <= 0)
+    {
+        return 0;
+    }
+    std::vector<int> indexArray;
+    for (int i = 0; i < validCount; ++i)
+    {
+        indexArray.push_back(i);
+    }
+    quick_sort_indice_inverse(objProbs, 0, validCount - 1, indexArray);
+
+    std::set<int> class_set(std::begin(classId), std::end(classId));
+
+    for (auto c : class_set)
+    {
+        nms(validCount, filterBoxes, classId, indexArray, c, nms_threshold);
+    }
+
+    int last_count = 0;
+    od_results->count = 0;
+
+    /* box valid detect target */
+    for (int i = 0; i < validCount; ++i)
+    {
+        if (indexArray[i] == -1 || last_count >= OBJ_NUMB_MAX_SIZE)
+        {
+            continue;
+        }
+        int n = indexArray[i];
+
+        float x1 = filterBoxes[n * 4 + 0] - letter_box->x_pad;
+        float y1 = filterBoxes[n * 4 + 1] - letter_box->y_pad;
+        float x2 = x1 + filterBoxes[n * 4 + 2];
+        float y2 = y1 + filterBoxes[n * 4 + 3];
+        int id = classId[n];
+        float obj_conf = objProbs[i];
+
+        od_results->results[last_count].box.left = (int)(clamp(x1, 0, model_in_w) / letter_box->scale);
+        od_results->results[last_count].box.top = (int)(clamp(y1, 0, model_in_h) / letter_box->scale);
+        od_results->results[last_count].box.right = (int)(clamp(x2, 0, model_in_w) / letter_box->scale);
+        od_results->results[last_count].box.bottom = (int)(clamp(y2, 0, model_in_h) / letter_box->scale);
+        od_results->results[last_count].prop = obj_conf;
+        od_results->results[last_count].cls_id = id;
+        last_count++;
+    }
     od_results->count = last_count;
     return 0;
 }
+
 int init_post_process()
 {
     int ret = 0;

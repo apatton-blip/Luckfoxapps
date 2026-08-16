@@ -8,22 +8,22 @@
 #if YOLO_VERSION == 8
     #include "yolov8.h"
     #define INIT_YOLO init_yolov8_model
-    #define INFER_YOLO(ctx, img, res) inference_yolov8_model(ctx, img, res)
+    #define INFER_YOLO(ctx, yolo_ctx, img, res) inference_yolov8_model(ctx, img, res)
     #define RELEASE_YOLO release_yolov8_model
 #elif YOLO_VERSION == 10
     #include "yolov10.h"
     #define INIT_YOLO init_yolov10_model
-    #define INFER_YOLO(ctx, img, res) inference_yolov10_model(ctx, img, res)
+    #define INFER_YOLO(ctx, yolo_ctx, img, res) inference_yolov10_model(ctx, img, res)
     #define RELEASE_YOLO release_yolov10_model
 #elif YOLO_VERSION == 11
-    #include "yolov11.h"
-    #define INIT_YOLO init_yolov11_model
-    #define INFER_YOLO(ctx, img, res) inference_yolov11_model(ctx, img, res)
-    #define RELEASE_YOLO release_yolov11_model
+    #include "yolo11.h"
+    #define INIT_YOLO init_yolo11_model
+    #define INFER_YOLO(ctx, yolo_ctx, img, res) inference_yolo11_model(ctx, img, res)
+    #define RELEASE_YOLO release_yolo11_model
 #elif YOLO_VERSION == 26
     #include "yolo26.h"
     #define INIT_YOLO init_yolo26_model
-    #define INFER_YOLO(ctx, img, res) inference_yolo26_model(ctx, img, res)
+    #define INFER_YOLO(ctx, yolo_ctx, img, res) inference_yolo26_model(ctx, yolo_ctx, img, res)
     #define RELEASE_YOLO release_yolo26_model
 #else
     #error "Unsupported YOLO_VERSION specified in CMake!"
@@ -36,6 +36,7 @@ constexpr int MODEL_HEIGHT = 640;
 
 struct ai_internal_ctx {
     rknn_app_context_t rknn_ctx;
+    yolo_context_t yolo_ctx;
 };
 
 yolovxx_ai_context yolovxx_ai_init(const char* model_path) {
@@ -48,7 +49,7 @@ yolovxx_ai_context yolovxx_ai_init(const char* model_path) {
         return nullptr;
     }
     
-    init_post_process();
+    // init_post_process();
     return static_cast<yolovxx_ai_context>(ctx);
 }
 
@@ -85,7 +86,7 @@ std::vector<yolovxx_detection> yolovxx_ai_infer(yolovxx_ai_context ctx, const cv
     object_detect_result_list od_results;
     
     // Run Inference
-    INFER_YOLO(&internal->rknn_ctx, &img, &od_results);
+    INFER_YOLO(&internal->rknn_ctx, &internal->yolo_ctx, &img, &od_results);
 
     // Map Coordinates
     for (int i = 0; i < od_results.count; i++) {

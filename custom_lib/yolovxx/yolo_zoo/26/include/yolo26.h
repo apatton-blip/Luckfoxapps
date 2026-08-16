@@ -45,11 +45,10 @@ typedef struct {
 
 #include "postprocess.h"
 
-
 int init_yolo26_model(const char* model_path, rknn_app_context_t* app_ctx);
 
 int release_yolo26_model(rknn_app_context_t* app_ctx);
 
-int inference_yolo26_model(rknn_app_context_t* app_ctx, image_buffer_t* img, object_detect_result_list* od_results);
+int inference_yolo26_model(rknn_app_context_t* app_ctx, yolo_context_t* yolo_ctx, image_buffer_t* img, object_detect_result_list* od_results);
 
 #endif //_RKNN_DEMO_YOLO26_H_

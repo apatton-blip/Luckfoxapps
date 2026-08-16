@@ -22,8 +22,7 @@
 #include "file_utils.h"
 #include "image_utils.h"
 
-static void dump_tensor_attr(rknn_tensor_attr *attr)
-{
+static void dump_tensor_attr(rknn_tensor_attr *attr){
     printf("  index=%d, name=%s, n_dims=%d, dims=[%d, %d, %d, %d], n_elems=%d, size=%d, fmt=%s, type=%s, qnt_type=%s, "
            "zp=%d, scale=%f\n",
            attr->index, attr->name, attr->n_dims, attr->dims[0], attr->dims[1], attr->dims[2], attr->dims[3],
@@ -31,8 +30,7 @@ static void dump_tensor_attr(rknn_tensor_attr *attr)
            get_qnt_type_string(attr->qnt_type), attr->zp, attr->scale);
 }
 
-int init_yolo26_model(const char *model_path, rknn_app_context_t *app_ctx)
-{
+int init_yolo26_model(const char *model_path, rknn_app_context_t *app_ctx){
     int ret;
     rknn_context ctx = 0;
 
@@ -150,8 +148,7 @@ int init_yolo26_model(const char *model_path, rknn_app_context_t *app_ctx)
     return 0;
 }
 
-int release_yolo26_model(rknn_app_context_t *app_ctx)
-{    
+int release_yolo26_model(rknn_app_context_t *app_ctx){    
     if (app_ctx->input_attrs != NULL)
     {
         free(app_ctx->input_attrs);
@@ -180,8 +177,7 @@ int release_yolo26_model(rknn_app_context_t *app_ctx)
     return 0;
 }
 
-int inference_yolo26_model(rknn_app_context_t *app_ctx, image_buffer_t *img, object_detect_result_list *od_results)
-{
+int inference_yolo26_model(rknn_app_context_t *app_ctx, yolo_context_t* yolo_ctx, image_buffer_t *img, object_detect_result_list *od_results){
     int ret;
     image_buffer_t dst_img;
     letterbox_t letter_box;
@@ -232,7 +228,7 @@ int inference_yolo26_model(rknn_app_context_t *app_ctx, image_buffer_t *img, obj
     }
 
     // Post Process
-    post_process(app_ctx, app_ctx->output_mems, &letter_box, box_conf_threshold, nms_threshold, od_results);
+    post_process(app_ctx, yolo_ctx, app_ctx->output_mems, &letter_box, box_conf_threshold, nms_threshold, od_results);
 out:
     return ret;
 }

@@ -6,7 +6,7 @@ set(LIBC_TYPE "uclibc")
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/lib/${LIBC_TYPE})
 
-set(YOLO_VERSION "10" CACHE STRING "YOLO model version to compile (5, 10, 11)")
+set(YOLO_VERSION "10" CACHE STRING "YOLO VERSION to compile: [8 10 11 26]")
 message(STATUS "Configuring build for YOLO version: ${YOLO_VERSION}")
 
 set(OpenCV_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/${LIBC_TYPE}/lib/cmake/opencv4")
@@ -37,7 +37,7 @@ add_definitions(-DDISABLE_LIBJPEG)
 set(COMMON_INCLUDE_DIRS
     ${CMAKE_CURRENT_SOURCE_DIR}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/rknn
-    ${CMAKE_CURRENT_SOURCE_DIR}/yolo_zoo/${YOLO_VERSION}
+    ${CMAKE_CURRENT_SOURCE_DIR}/yolo_zoo/${YOLO_VERSION}/include
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/librga
     ${CMAKE_CURRENT_SOURCE_DIR}/3rdparty/stb_image
     ${CMAKE_CURRENT_SOURCE_DIR}/utils
@@ -51,7 +51,7 @@ set(COMMON_INCLUDE_DIRS
 )
 
 file(GLOB YOLO_VER_SRCS
-    "yolo_zoo/${USE_YOLO_VERSION}/*.cc"
+    "yolo_zoo/${YOLO_VERSION}/src/*.cc"
 )
 
 add_library(yolovxx_lib STATIC 
@@ -60,12 +60,14 @@ add_library(yolovxx_lib STATIC
     yolovxx/yolovxx_util.cpp
     yolovxx/luckfox_mpi.cc
     ${YOLO_VER_SRCS} # VERSION SPECIFIC
-    
     utils/file_utils.c
     utils/image_utils.c
 )
 
-set_target_properties(yolovxx_lib PROPERTIES POSITION_INDEPENDENT_CODE ON)
+set_target_properties(yolovxx_lib PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    OUTPUT_NAME "yolovxx_${YOLO_VERSION}"
+)
 
 target_compile_definitions(yolovxx_lib PUBLIC YOLO_VERSION=${YOLO_VERSION})
 
@@ -83,8 +85,4 @@ target_link_libraries(yolovxx_lib
     rkaiq
     sample_comm
     rtsp
-)
-
-set_target_properties(yolovxx_lib PROPERTIES
-    OUTPUT_NAME "yolovxx_${YOLO_VERSION}"
 )
