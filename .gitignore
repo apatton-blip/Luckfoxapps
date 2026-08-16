@@ -3,3 +3,4 @@ applications/*
 !applications/luckfox_pico_rtsp_yolov5/
 !applications/luckfox_pico_yolov10/
 !applications/luckfox_pico_yolov11/
+out/
